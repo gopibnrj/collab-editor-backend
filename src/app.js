@@ -12,10 +12,14 @@ import documentRoutes from "./routes/documentRoutes.js";
 dotenv.config();
 
 const app = express();
+
+// ✅ Define allowed origins (local + deployed frontend)
 const allowedOrigins = [
-  "http://localhost:3000", 
-  "https://collab-editor-frontend-xi.vercel.app"
+  "http://localhost:3000",
+  "https://collab-editor-frontend-xi.vercel.app",
 ];
+
+// ✅ Express CORS middleware
 app.use(
   cors({
     origin: function (origin, callback) {
@@ -31,13 +35,22 @@ app.use(
 
 app.use(express.json());
 
+// ✅ API routes
 app.use("/api/users", userRoutes);
 app.use("/api/documents", documentRoutes);
 
 const server = createServer(app);
-const io = new Server(server, { cors: { origin: "*" } });
 
-// Redis presence helpers
+// ✅ Socket.IO CORS setup
+const io = new Server(server, {
+  cors: {
+    origin: allowedOrigins,
+    methods: ["GET", "POST"],
+    credentials: true,
+  },
+});
+
+// 🔹 Redis presence helpers
 const addUserToDoc = async (docId, username) => {
   await redisClient.sAdd(`doc:${docId}:users`, username);
 };
@@ -51,6 +64,7 @@ const countUsersInDoc = async (docId) => {
   return await redisClient.sCard(`doc:${docId}:users`);
 };
 
+// 🔹 Socket.IO events
 io.on("connection", (socket) => {
   console.log("🔌 User connected:", socket.id);
 
@@ -109,5 +123,6 @@ io.on("connection", (socket) => {
   });
 });
 
+// ✅ Start server
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => console.log(`🚀 Backend running on port ${PORT}`));
