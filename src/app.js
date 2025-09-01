@@ -13,35 +13,28 @@ dotenv.config();
 
 const app = express();
 
-// ✅ Define allowed origins (local + deployed frontend)
 const allowedOrigins = [
   "http://localhost:3000",
   "https://collab-editor-frontend-xi.vercel.app",
 ];
 
-// ✅ Express CORS middleware
+// ✅ Apply CORS for API
 app.use(
   cors({
-    origin: function (origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
+    origin: allowedOrigins,
     credentials: true,
   })
 );
 
 app.use(express.json());
 
-// ✅ API routes
+// ✅ Routes
 app.use("/api/users", userRoutes);
 app.use("/api/documents", documentRoutes);
 
+// ✅ Server + Socket.IO
 const server = createServer(app);
 
-// ✅ Socket.IO CORS setup
 const io = new Server(server, {
   cors: {
     origin: allowedOrigins,
@@ -50,7 +43,12 @@ const io = new Server(server, {
   },
 });
 
-// 🔹 Redis presence helpers
+// Test endpoint (to debug 502)
+app.get("/", (req, res) => {
+  res.send("✅ Backend is running");
+});
+
+// Redis presence helpers
 const addUserToDoc = async (docId, username) => {
   await redisClient.sAdd(`doc:${docId}:users`, username);
 };
@@ -60,11 +58,8 @@ const removeUserFromDoc = async (docId, username) => {
 const getUsersInDoc = async (docId) => {
   return await redisClient.sMembers(`doc:${docId}:users`);
 };
-const countUsersInDoc = async (docId) => {
-  return await redisClient.sCard(`doc:${docId}:users`);
-};
 
-// 🔹 Socket.IO events
+// Socket.IO events
 io.on("connection", (socket) => {
   console.log("🔌 User connected:", socket.id);
 
