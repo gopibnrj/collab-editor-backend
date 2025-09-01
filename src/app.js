@@ -15,7 +15,7 @@ const app = express();
 
 const allowedOrigins = [
   "http://localhost:3000",
-  "https://collab-editor-frontend-xi.vercel.app",
+  "https://collab-editor-frontend-xi.vercel.app/",
 ];
 
 // ✅ Apply CORS for API
